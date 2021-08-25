@@ -1,11 +1,13 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Identity.Web;
 using Microsoft.OpenApi.Models;
+using WebAPIWithDapper.Models;
 
 namespace WebAPIWithDapper
 {
@@ -21,9 +23,10 @@ namespace WebAPIWithDapper
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-                .AddMicrosoftIdentityWebApi(Configuration.GetSection("AzureAd"));
-
+            services.AddDbContext<ApplicationDbContext>(
+                o => o.UseSqlServer(
+                    Configuration.GetConnectionString("DefaultConnection"))
+            );
             services.AddControllers();
             services.AddSwaggerGen(c =>
             {
@@ -42,12 +45,13 @@ namespace WebAPIWithDapper
             }
 
             app.UseHttpsRedirection();
-
+            app.UseCors(x => x
+                .AllowAnyOrigin()
+                .AllowAnyMethod()
+                .AllowAnyHeader());
             app.UseRouting();
-
             app.UseAuthentication();
             app.UseAuthorization();
-
             app.UseEndpoints(endpoints => { endpoints.MapControllers(); });
         }
     }
